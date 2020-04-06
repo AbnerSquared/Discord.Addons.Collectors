@@ -1,4 +1,4 @@
-# Discord.Addon.Collectors
+# Discord.Addons.Collectors
 An extension for Discord.Net that provides classes to filter and collect messages.
 
 # Purpose
