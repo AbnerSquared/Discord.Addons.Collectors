@@ -6,6 +6,8 @@
     <Authors>AbnerSquared</Authors>
     <Title>Discord.Addons.Collectors</Title>
     <PackageId>Discord.Addons.Collectors</PackageId>
+    <PackageIcon>Icon.png</PackageIcon>
+    <PackageIconUrl>Icon.png</PackageIconUrl>
     <Description>An add-on for Discord.Net that provides classes to filter and collect messages. </Description>
     <PackageLicenseFile>LICENSE.txt</PackageLicenseFile>
     <PackageTags>discord, discord.net, discord.addons, discord.addons.interactive, interactive, messaging, collector</PackageTags>
@@ -19,6 +21,10 @@
   </ItemGroup>
   
   <ItemGroup>
+    <None Include="marketing\Icon.png">
+      <Pack>True</Pack>
+      <PackagePath></PackagePath>
+    </None>
     <None Include="LICENSE.txt">
       <Pack>True</Pack>
       <PackagePath></PackagePath>
