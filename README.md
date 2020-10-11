@@ -6,7 +6,7 @@
 An extension for Discord.Net that provides classes to filter and collect messages.
 
 ## Usage
-To initialize a new `MessageCollector`, you require an instance of a `Discord.Websocket.BaseSocketClient`. Any inheriting types of this class also works.
+To initialize a new `MessageCollector`, you require an instance of a `Discord.WebSocket.BaseSocketClient`. Any inheriting types of this class also works.
 ```cs
 private readonly BaseSocketClient _client;
 var collector = new MessageCollector(_client);
