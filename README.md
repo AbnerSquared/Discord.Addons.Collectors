@@ -148,3 +148,6 @@ public class DummyModule : ModuleBase<SocketCommandContext>
 	}
 }
 ```
+
+# Credits
+[**Discord.Net**](https://github.com/discord-net/Discord.Net) for the [original logo design](https://github.com/discord-net/Discord.Net/blob/dev/docs/marketing/logo/PackageLogo.png).
