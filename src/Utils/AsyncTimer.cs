@@ -6,16 +6,16 @@ namespace Discord.Addons.Collectors
 {
     internal class AsyncTimer
     {
-        private bool _started = false;
+        private bool _started;
 
-        public AsyncTimer(TimeSpan? duration)
+        internal AsyncTimer(TimeSpan? duration)
         {
             InternalTimer = new Timer
             {
-                Enabled = false
+                Enabled = false,
+                AutoReset = false
             };
 
-            InternalTimer.AutoReset = false;
             Timeout = duration;
             TimeStarted = Signal = null;
             CompletionSource = new TaskCompletionSource<bool>();
@@ -23,17 +23,19 @@ namespace Discord.Addons.Collectors
             Elapsed = false;
         }
 
-        public bool Elapsed { get; private set; }
+        internal bool Elapsed { get; private set; }
 
-        public TimeSpan ElapsedTime => TimeStarted.HasValue
-            ? DateTime.UtcNow - TimeStarted.Value
+        internal TimeSpan ElapsedTime => TimeStarted.HasValue
+            ? Signal.HasValue
+                ? Signal.Value - TimeStarted.Value
+                : DateTime.UtcNow - TimeStarted.Value
             : Signal.HasValue
-            ? Signal.Value - TimeStarted.Value
-            : TimeSpan.Zero;
+                ? DateTime.UtcNow - Signal.Value
+                : TimeSpan.Zero;
 
-        public TaskCompletionSource<bool> CompletionSource { get; private set; }
+        internal TaskCompletionSource<bool> CompletionSource { get; private set; }
 
-        public TimeSpan? Timeout
+        internal TimeSpan? Timeout
         {
             get => TimeSpan.FromMilliseconds(InternalTimer.Interval);
             set
@@ -57,34 +59,35 @@ namespace Discord.Addons.Collectors
 
         private DateTime? Signal { get; set; }
 
-        public void Start()
-        {
-            if (!_started)
-            {
-                TimeStarted = DateTime.UtcNow;
-                Signal = null;
-                InternalTimer.Start();
-                _started = true;
-                Elapsed = false;
-            }
-        }
-
-        public void Stop()
+        internal void Start()
         {
             if (_started)
-            {
-                InternalTimer.Stop();
-                Signal = DateTime.UtcNow;
-                _started = false;
-                Elapsed = false;
-            }
+                return;
+
+            TimeStarted = DateTime.UtcNow;
+            Signal = null;
+            InternalTimer.Start();
+            CompletionSource = new TaskCompletionSource<bool>();
+            _started = true;
+            Elapsed = false;
         }
 
-        public void Reset()
+        internal void Stop()
+        {
+            if (!_started)
+                return;
+
+            InternalTimer.Stop();
+            Signal = DateTime.UtcNow;
+            _started = false;
+            Elapsed = false;
+        }
+
+        internal void Reset()
         {
             bool isActive = _started;
             Stop();
-            
+
             if (isActive)
             {
                 Start();

@@ -3,9 +3,9 @@
 namespace Discord.Addons.Collectors
 {
     /// <summary>
-    /// Represents the method used to filter a single message.
+    /// Represents a generic message filter.
     /// </summary>
-    /// <param name="message">The message to filter.</param>
-    /// <param name="index">The position at which this message was filtered (zero-based).</param>
+    /// <param name="message">The message that was read.</param>
+    /// <param name="index">The current counter of messages handled.</param>
     public delegate bool FilterDelegate(SocketMessage message, int index);
 }

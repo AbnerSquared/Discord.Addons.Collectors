@@ -2,10 +2,26 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
+    <Authors>AbnerSquared</Authors>
+    <Title>Discord.Addons.Collectors</Title>
+    <PackageId>Discord.Addons.Collectors</PackageId>
+    <Description>An add-on for Discord.Net that provides classes to filter and collect messages. </Description>
+    <PackageLicenseFile>LICENSE.txt</PackageLicenseFile>
+    <PackageTags>discord, discord.net, discord.addons, discord.addons.interactive, interactive, messaging, collector</PackageTags>
+    <LangVersion>latest</LangVersion>
+    <PackageProjectUrl>https://github.com/AbnerSquared/Discord.Addons.Collectors</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/AbnerSquared/Discord.Addons.Collectors</RepositoryUrl>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Discord.Net.WebSocket" Version="2.1.1" />
+    <PackageReference Include="Discord.Net.WebSocket" Version="2.2.0" />
+  </ItemGroup>
+  
+  <ItemGroup>
+    <None Include="LICENSE.txt">
+      <Pack>True</Pack>
+      <PackagePath></PackagePath>
+    </None>
   </ItemGroup>
 
 </Project>

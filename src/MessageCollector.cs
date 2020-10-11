@@ -3,68 +3,61 @@ using System;
 using System.Threading.Tasks;
 
 #pragma warning disable CS1998 // Async method lacks 'await' operators and will run synchronously
-
 namespace Discord.Addons.Collectors
 {
     /// <summary>
-    /// Represents a handler for collecting inbound messages on Discord.
+    /// Represents a handler for collecting inbound messages on <see cref="Discord"/>.
     /// </summary>
     public class MessageCollector
     {
         private readonly BaseSocketClient _client;
 
         /// <summary>
-        /// Constructs a new <see cref="MessageCollector"/> with the specified <see cref="BaseSocketClient"/>.
+        /// Initializes a new <see cref="MessageCollector"/> with the specified <see cref="BaseSocketClient"/>.
         /// </summary>
-        /// <param name="client">The <see cref="BaseSocketClient"/> that will be used to read inbound messages.</param>
+        /// <param name="client">The <see cref="BaseSocketClient"/> that will be referenced to read inbound messages.</param>
         public MessageCollector(BaseSocketClient client)
         {
             _client = client;
         }
 
         /// <summary>
-        /// Gets the total time that elapsed during a handled process (only updated at the end of each handling).
+        /// Starts an asynchronous <see cref="MessageSession"/> for this <see cref="MessageCollector"/>.
         /// </summary>
-        public TimeSpan? ElapsedTime { get; private set; }
-
-        /// <summary>
-        /// Tells the <see cref="MessageCollector"/> to begin handling messages.
-        /// </summary>
+        /// <param name="session">The <see cref="MessageSession"/> that will be used for this <see cref="MessageCollector"/>.</param>
         /// <param name="filter">The filter that will be used to compare messages.</param>
         /// <param name="options">The options that will be used to set up the <see cref="MessageCollector"/>.</param>
-        /// <returns></returns>
-        public async Task HandleAsync(FilterDelegate filter, HandlerOptions options = null)
+        /// <returns>A <see cref="TimeSpan"/> that represents the amount of time that has passed for this method.</returns>
+        public async Task<TimeSpan> RunSessionAsync(MessageSession session, FilterDelegate filter, MatchOptions options = null)
         {
-            options = options ?? HandlerOptions.Default;
+            if (session == null)
+                throw new ArgumentNullException(nameof(session), "The specified MessageSession cannot be null");
 
-            int index = 0;
-            FilterResult match = null;
+            options ??= MatchOptions.Default;
+            SocketMessage previous = null;
             var timer = new AsyncTimer(options.Timeout);
             var complete = new TaskCompletionSource<bool>();
 
-            await options.Handler.OnStartAsync();
+            await session.OnStartAsync();
 
+            int index = 0;
             async Task HandleAsync(SocketMessage arg)
             {
                 bool filterSuccess = filter.Invoke(arg, index);
-                match = new FilterResult(arg, index, filterSuccess);
+                previous = arg;
 
                 if (filterSuccess)
                 {
-                    HandlerResult result = await options.Handler.OnFilterAsync(arg);
+                    SessionResult result = await session.OnMessageReceivedAsync(arg);
 
                     switch (result)
                     {
-                        case HandlerResult.Fail:
-                            complete.SetResult(false);
-                            break;
-
-                        case HandlerResult.Success:
+                        case SessionResult.Success:
                             complete.SetResult(true);
                             break;
 
-                        case HandlerResult.Continue:
-                        default:
+                        case SessionResult.Fail:
+                            complete.SetResult(false);
                             break;
                     }
                 }
@@ -83,39 +76,36 @@ namespace Discord.Addons.Collectors
             await Task.WhenAny(timer.CompletionSource.Task, complete.Task);
 
             _client.MessageReceived -= HandleAsync;
-            ElapsedTime = timer.ElapsedTime;
 
             if (timer.Elapsed)
-                await options.Handler.OnTimeoutAsync(match?.Message);
+                await session.OnTimeoutAsync(previous);
+
+            return timer.ElapsedTime;
         }
 
         /// <summary>
-        /// Tells the <see cref="MessageCollector"/> to collect the next successful message.
+        /// Tells the <see cref="MessageCollector"/> to asynchronously attempt to match a single message.
         /// </summary>
-        /// <param name="filter">The filter that will be used to compare messages.</param>
+        /// <param name="filter">The raw filter that will be used to compare messages.</param>
         /// <param name="options">The options that will be used to set up the <see cref="MessageCollector"/>.</param>
-        public async Task<FilterResult> NextAsync(FilterDelegate filter, FilterOptions options = null)
+        /// <returns>A <see cref="TimeSpan"/> that represents the amount of time that has passed for this method.</returns>
+        public async Task<MessageMatch> MatchAsync(FilterDelegate filter, MatchOptions options = null)
         {
-            options = options ?? FilterOptions.Default;
+            options ??= MatchOptions.Default;
+            MessageMatch match = null;
 
-            int attempts = 0;
-            FilterResult match = null;
             var timer = new AsyncTimer(options.Timeout);
             var complete = new TaskCompletionSource<bool>();
-            
+
+            int attempts = 0;
             async Task HandleAsync(SocketMessage arg)
             {
                 bool isSuccess = filter.Invoke(arg, attempts);
-                match = new FilterResult(arg, attempts, isSuccess);
+                match = new MessageMatch(arg, attempts, isSuccess, timer.ElapsedTime);
 
                 if (isSuccess)
                 {
                     complete.SetResult(true);
-                }
-                else if (options.MaxAttempts.HasValue)
-                {
-                    if (attempts == options.MaxAttempts.Value)
-                        complete.SetResult(false);
                 }
 
                 if (options.ResetTimeoutOnAttempt)
@@ -132,42 +122,34 @@ namespace Discord.Addons.Collectors
             await Task.WhenAny(timer.CompletionSource.Task, complete.Task);
 
             _client.MessageReceived -= HandleAsync;
-            ElapsedTime = timer.ElapsedTime;
-
             return match;
         }
 
         /// <summary>
-        /// Tells the <see cref="MessageCollector"/> to begin collecting messages.
+        /// Tells the <see cref="MessageCollector"/> to begin collecting messages asynchronously.
         /// </summary>
-        /// <param name="filter">The filter that will be used when comparing messages.</param>
+        /// <param name="filter">The raw filter that will be used when comparing messages.</param>
         /// <param name="options">The options that will be used to set up the <see cref="MessageCollector"/>.</param>
-        public async Task<FilterCollection> CollectAsync(FilterCollectionDelegate filter, CollectionOptions options = null)
+        /// <returns>A <see cref="TimeSpan"/> that represents the amount of time that has passed for this method.</returns>
+        public async Task<MessageMatchCollection> CollectAsync(FilterCollectionDelegate filter, CollectionOptions options = null)
         {
-            options = options ?? CollectionOptions.Default;
-
-            int index = 0;
-            var matches = new FilterCollection();
+            options ??= CollectionOptions.Default;
+            var matches = new MessageMatchCollection();
             var timer = new AsyncTimer(options.Timeout);
             var complete = new TaskCompletionSource<bool>();
-            
+
+            int index = 0;
             async Task HandleAsync(SocketMessage arg)
             {
                 bool isSuccess = filter.Invoke(arg, matches, index);
 
-                if (options.IncludeFailedCollections)
-                {
-                    matches.Add(new FilterResult(arg, index, isSuccess));
-                }
-                else if (isSuccess)
-                {
-                    matches.Add(new FilterResult(arg, index, isSuccess));
+                if (isSuccess || options.IncludeFailedMatches)
+                    matches.Add(new MessageMatch(arg, index, isSuccess, timer.ElapsedTime));
 
-                    if (options.ResetTimeoutOnCollection)
-                        timer.Reset();
-                }
+                if (isSuccess && options.ResetTimeoutOnMatch)
+                    timer.Reset();
 
-                if (matches.Count == options.Capacity)
+                if (options.Capacity.HasValue && matches.Count == options.Capacity.Value)
                 {
                     timer.Stop();
                     complete.SetResult(true);
@@ -184,8 +166,6 @@ namespace Discord.Addons.Collectors
             await Task.WhenAny(timer.CompletionSource.Task, complete.Task);
 
             _client.MessageReceived -= HandleAsync;
-
-            ElapsedTime = timer.ElapsedTime;
             return matches;
         }
     }

@@ -3,10 +3,10 @@
 namespace Discord.Addons.Collectors
 {
     /// <summary>
-    /// Represents the method used to filter a single message based on past collections.
+    /// Represents a message filter with inclusion to previously matched entries.
     /// </summary>
-    /// <param name="message">The message to filter.</param>
-    /// <param name="matches">The collection of previously successful messages.</param>
-    /// <param name="index">The position at which this message was filtered (zero-based).</param>
-    public delegate bool FilterCollectionDelegate(SocketMessage message, FilterCollection matches, int index);
+    /// <param name="message">The message that was read.</param>
+    /// <param name="matches">A collection of all previous matches.</param>
+    /// <param name="index">The current counter of messages handled.</param>
+    public delegate bool FilterCollectionDelegate(SocketMessage message, MessageMatchCollection matches, int index);
 }
