@@ -1,4 +1,6 @@
+<img src="./marketing/Icon.png" width="64" height="64" /><br/>
 # Discord.Addons.Collectors
+[![NuGet](https://img.shields.io/nuget/vpre/Discord.Addons.Collectors.svg?maxAge=2592000?style=plastic)](https://www.nuget.org/packages/Discord.Addons.Collectors)<br/>
 An extension for Discord.Net that provides classes to filter and collect messages.
 
 ## Usage
