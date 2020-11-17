@@ -103,6 +103,8 @@ public class DummySession : MessageSession
 			{
 				x.Content = "You ran out of attempts. The answer was 4.";
 			});
+			
+			return SessionResult.Success;
 		}
 	}
 
